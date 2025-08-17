@@ -1,5 +1,5 @@
 import express from 'express';
-import bcrypt from 'bcrypt';
+import bcrypt from 'bcryptjs';
 import { z } from 'zod';
 import { db, users, onboardingData } from '../db/index.js';
 import { eq } from 'drizzle-orm';
