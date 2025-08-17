@@ -24,6 +24,12 @@ export const RegisterForm: React.FC<RegisterFormProps> = ({ onSwitchToLogin }) =
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    if (!email || !password) {
+      setError('Please fill in all required fields');
+      return;
+    }
+    
     setIsLoading(true);
     setError('');
 
@@ -42,7 +48,8 @@ export const RegisterForm: React.FC<RegisterFormProps> = ({ onSwitchToLogin }) =
     try {
       await register(email, password, name || undefined);
     } catch (err: any) {
-      setError(err.message || 'Registration failed. Please try again.');
+      console.error('Registration error:', err);
+      setError(err.message || 'Registration failed. Please try again with a different email.');
     } finally {
       setIsLoading(false);
     }

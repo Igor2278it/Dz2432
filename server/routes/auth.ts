@@ -45,15 +45,13 @@ router.post('/register', async (req, res) => {
     // Hash password
     const saltRounds = 12;
     const passwordHash = await bcrypt.hash(password, saltRounds);
-    const verificationToken = nanoid();
 
     // Create user
     const newUser = await db.insert(users).values({
       email,
       name,
       passwordHash,
-      verificationToken,
-      isVerified: false, // In production, send verification email
+      isVerified: true, // Auto-verify for demo purposes
     }).returning();
 
     // Generate JWT token

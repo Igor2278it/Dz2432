@@ -3,7 +3,7 @@ import jwt from 'jsonwebtoken';
 import { db, users } from '../db/index.js';
 import { eq } from 'drizzle-orm';
 
-const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key-change-in-production';
+const JWT_SECRET = process.env.JWT_SECRET || 'plantpal-dev-secret-key-2024';
 
 export interface AuthRequest extends Request {
   user?: {

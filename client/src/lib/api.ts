@@ -1,4 +1,4 @@
-const API_BASE = import.meta.env.PROD ? '/api' : 'http://localhost:5000/api';
+const API_BASE = import.meta.env.PROD ? '/api' : '/api';
 
 export interface ApiResponse<T = any> {
   success: boolean;
@@ -45,6 +45,7 @@ class ApiClient {
       const response = await fetch(url, {
         ...options,
         headers,
+        credentials: 'include',
       });
 
       const data = await response.json();
