@@ -1,4 +1,4 @@
-const API_BASE = import.meta.env.PROD ? '/api' : '/api';
+const API_BASE = '/api';
 
 export interface ApiResponse<T = any> {
   success: boolean;
@@ -48,11 +48,13 @@ class ApiClient {
         credentials: 'include',
       });
 
-      const data = await response.json();
-
       if (!response.ok) {
-        throw new Error(data.message || 'Request failed');
+        const errorText = await response.text();
+        console.error('API Error:', response.status, errorText);
+        throw new Error(`HTTP ${response.status}: ${errorText}`);
       }
+
+      const data = await response.json();
 
       return data;
     } catch (error) {
