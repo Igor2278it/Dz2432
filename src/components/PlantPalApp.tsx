@@ -1,14 +1,11 @@
 import React from 'react';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { AuthProvider, useAuth } from '@/contexts/AuthContext';
+import { motion } from 'framer-motion';
+import { useAuth } from '@/contexts/AuthContext';
 import { AuthScreen } from '@/components/auth/AuthScreen';
 import { OnboardingFlow } from '@/components/onboarding/OnboardingFlow';
 import { SageWelcome } from '@/components/mascot/SageWelcome';
-import { motion, AnimatePresence } from 'framer-motion';
 
-const queryClient = new QueryClient();
-
-const AppContent: React.FC = () => {
+export const PlantPalApp: React.FC = () => {
   const { user, isLoading, isAuthenticated } = useAuth();
   const [showWelcome, setShowWelcome] = React.useState(false);
 
@@ -47,7 +44,7 @@ const AppContent: React.FC = () => {
     return <OnboardingFlow />;
   }
 
-  // Main app content (placeholder for now)
+  // Main app content
   return (
     <div className="min-h-screen bg-gradient-to-br from-green-50 via-emerald-50 to-teal-50 flex items-center justify-center p-4">
       <motion.div
@@ -73,15 +70,3 @@ const AppContent: React.FC = () => {
     </div>
   );
 };
-
-const App: React.FC = () => {
-  return (
-    <QueryClientProvider client={queryClient}>
-      <AuthProvider>
-        <AppContent />
-      </AuthProvider>
-    </QueryClientProvider>
-  );
-};
-
-export default App;

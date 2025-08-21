@@ -1,16 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { api } from '@/lib/api';
-
-interface User {
-  id: string;
-  email: string;
-  name?: string;
-  isVerified: boolean;
-  onboardingCompleted: boolean;
-  level: number;
-  xp: number;
-  streak: number;
-}
+import { mockApi, User } from '@/lib/mockApi';
 
 interface AuthContextType {
   user: User | null;
@@ -47,19 +36,16 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     const initAuth = async () => {
       const token = localStorage.getItem('auth_token');
       if (token) {
-        api.setToken(token);
         try {
-          const response = await api.getCurrentUser();
+          const response = await mockApi.getCurrentUser();
           if (response.success) {
-            setUser(response.user);
+            setUser(response.user!);
           } else {
             localStorage.removeItem('auth_token');
-            api.setToken(null);
           }
         } catch (error) {
           console.error('Failed to get current user:', error);
           localStorage.removeItem('auth_token');
-          api.setToken(null);
         }
       }
       setIsLoading(false);
@@ -70,10 +56,10 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   const login = async (email: string, password: string) => {
     try {
-      const response = await api.login(email, password);
+      const response = await mockApi.login(email, password);
       if (response.success) {
-        api.setToken(response.token);
-        setUser(response.user);
+        localStorage.setItem('auth_token', response.token!);
+        setUser(response.user!);
       } else {
         throw new Error(response.message);
       }
@@ -85,10 +71,10 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   const register = async (email: string, password: string, name?: string) => {
     try {
-      const response = await api.register(email, password, name);
+      const response = await mockApi.register(email, password, name);
       if (response.success) {
-        api.setToken(response.token);
-        setUser(response.user);
+        localStorage.setItem('auth_token', response.token!);
+        setUser(response.user!);
       } else {
         throw new Error(response.message);
       }
@@ -100,15 +86,14 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   const logout = () => {
     localStorage.removeItem('auth_token');
-    api.setToken(null);
     setUser(null);
   };
 
   const completeOnboarding = async (data: any) => {
     try {
-      const response = await api.completeOnboarding(data);
+      const response = await mockApi.completeOnboarding(data);
       if (response.success) {
-        setUser(response.user);
+        setUser(response.user!);
       } else {
         throw new Error(response.message);
       }
@@ -119,9 +104,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   const refreshUser = async () => {
     try {
-      const response = await api.getCurrentUser();
+      const response = await mockApi.getCurrentUser();
       if (response.success) {
-        setUser(response.user);
+        setUser(response.user!);
       }
     } catch (error) {
       console.error('Failed to refresh user:', error);
