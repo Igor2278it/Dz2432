@@ -1,15 +1,16 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { mockApi, User } from '@/lib/mockApi';
+import { authApi, User } from '@/lib/supabase';
 
 interface AuthContextType {
   user: User | null;
   isLoading: boolean;
   isAuthenticated: boolean;
-  login: (email: string, password: string) => Promise<void>;
-  register: (email: string, password: string, name?: string) => Promise<void>;
-  logout: () => void;
+  signUp: (email: string, password: string, name?: string) => Promise<void>;
+  signIn: (email: string, password: string) => Promise<void>;
+  signInWithGoogle: () => Promise<void>;
+  signInWithApple: () => Promise<void>;
+  signOut: () => Promise<void>;
   completeOnboarding: (data: any) => Promise<void>;
-  refreshUser: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -33,83 +34,96 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const isAuthenticated = !!user;
 
   useEffect(() => {
-    const initAuth = async () => {
-      const token = localStorage.getItem('auth_token');
-      if (token) {
-        try {
-          const response = await mockApi.getCurrentUser();
-          if (response.success) {
-            setUser(response.user!);
-          } else {
-            localStorage.removeItem('auth_token');
-          }
-        } catch (error) {
-          console.error('Failed to get current user:', error);
-          localStorage.removeItem('auth_token');
-        }
+    // Get initial user
+    authApi.getCurrentUser().then((supabaseUser) => {
+      if (supabaseUser) {
+        setUser({
+          id: supabaseUser.id,
+          email: supabaseUser.email!,
+          name: supabaseUser.user_metadata?.name,
+          isVerified: supabaseUser.email_confirmed_at !== null,
+          onboardingCompleted: supabaseUser.user_metadata?.onboarding_completed || false,
+          level: supabaseUser.user_metadata?.level || 1,
+          xp: supabaseUser.user_metadata?.xp || 0,
+          streak: supabaseUser.user_metadata?.streak || 0,
+        });
       }
       setIsLoading(false);
-    };
+    }).catch(() => {
+      setIsLoading(false);
+    });
 
-    initAuth();
+    // Listen for auth changes
+    const { data: { subscription } } = authApi.onAuthStateChange((supabaseUser) => {
+      if (supabaseUser) {
+        setUser({
+          id: supabaseUser.id,
+          email: supabaseUser.email!,
+          name: supabaseUser.user_metadata?.name,
+          isVerified: supabaseUser.email_confirmed_at !== null,
+          onboardingCompleted: supabaseUser.user_metadata?.onboarding_completed || false,
+          level: supabaseUser.user_metadata?.level || 1,
+          xp: supabaseUser.user_metadata?.xp || 0,
+          streak: supabaseUser.user_metadata?.streak || 0,
+        });
+      } else {
+        setUser(null);
+      }
+      setIsLoading(false);
+    });
+
+    return () => subscription.unsubscribe();
   }, []);
 
-  const login = async (email: string, password: string) => {
+  const signUp = async (email: string, password: string, name?: string) => {
     try {
-      const response = await mockApi.login(email, password);
-      if (response.success) {
-        localStorage.setItem('auth_token', response.token!);
-        setUser(response.user!);
-      } else {
-        throw new Error(response.message);
-      }
-    } catch (error) {
-      console.error('Login failed:', error);
-      throw error;
+      await authApi.signUp(email, password, name);
+    } catch (error: any) {
+      throw new Error(error.message || 'Sign up failed');
     }
   };
 
-  const register = async (email: string, password: string, name?: string) => {
+  const signIn = async (email: string, password: string) => {
     try {
-      const response = await mockApi.register(email, password, name);
-      if (response.success) {
-        localStorage.setItem('auth_token', response.token!);
-        setUser(response.user!);
-      } else {
-        throw new Error(response.message);
-      }
-    } catch (error) {
-      console.error('Registration failed:', error);
-      throw error;
+      await authApi.signIn(email, password);
+    } catch (error: any) {
+      throw new Error(error.message || 'Sign in failed');
     }
   };
 
-  const logout = () => {
-    localStorage.removeItem('auth_token');
-    setUser(null);
+  const signInWithGoogle = async () => {
+    try {
+      await authApi.signInWithGoogle();
+    } catch (error: any) {
+      throw new Error(error.message || 'Google sign in failed');
+    }
+  };
+
+  const signInWithApple = async () => {
+    try {
+      await authApi.signInWithApple();
+    } catch (error: any) {
+      throw new Error(error.message || 'Apple sign in failed');
+    }
+  };
+
+  const signOut = async () => {
+    try {
+      await authApi.signOut();
+    } catch (error: any) {
+      throw new Error(error.message || 'Sign out failed');
+    }
   };
 
   const completeOnboarding = async (data: any) => {
-    try {
-      const response = await mockApi.completeOnboarding(data);
-      if (response.success) {
-        setUser(response.user!);
-      } else {
-        throw new Error(response.message);
-      }
-    } catch (error) {
-      throw error;
-    }
-  };
-
-  const refreshUser = async () => {
-    try {
-      const response = await mockApi.getCurrentUser();
-      if (response.success) {
-        setUser(response.user!);
-      }
-    } catch (error) {
-      console.error('Failed to refresh user:', error);
+    // This would update user metadata in Supabase
+    // For now, just update local state
+    if (user) {
+      setUser({
+        ...user,
+        onboardingCompleted: true,
+        xp: 100, // Welcome bonus
+      });
     }
   };
 
@@ -117,11 +131,12 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     user,
     isLoading,
     isAuthenticated,
-    login,
-    register,
-    logout,
+    signUp,
+    signIn,
+    signInWithGoogle,
+    signInWithApple,
+    signOut,
     completeOnboarding,
-    refreshUser,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
